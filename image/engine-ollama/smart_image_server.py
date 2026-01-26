@@ -27,10 +27,11 @@ os.makedirs(OUTPUT_DIR, exist_ok=True)
 class ImageRequest(BaseModel):
     prompt: str
     model: str = "x/z-image-turbo"
-    width: int = 720
-    height: int = 720
+    width: Optional[int] = None
+    height: Optional[int] = None
     steps: int = 4
     image_base64: Optional[str] = None
+    images_base64: Optional[list[str]] = None
     negative_prompt: Optional[str] = None
     seed: Optional[int] = None
 
@@ -71,17 +72,33 @@ def perform_image_inference(request: ImageRequest, task_id: str):
             "height": request.height,
             "steps": request.steps,
             "options": {
-                "width": request.width,
-                "height": request.height,
                 "steps": request.steps,
                 "seed": request.seed if request.seed is not None else -1
             }
         }
         
+        # Inyectar dimensiones solo si se especifican
+        if request.width:
+            payload["width"] = request.width
+            payload["options"]["width"] = request.width
+        if request.height:
+            payload["height"] = request.height
+            payload["options"]["height"] = request.height
+        
         if request.negative_prompt:
             payload["prompt"] = f"{request.prompt} [negative: {request.negative_prompt}]"
 
+        # Manejo de múltiples imágenes o imagen individual (retrocompatibilidad)
+        imgs = request.images_base64 or []
+        if request.image_base64:
+            imgs.append(request.image_base64)
+            
+        if imgs:
+            payload["images"] = imgs
+            logger.info(f"📸 Attached {len(imgs)} images to payload for model {request.model}")
+
         data = json.dumps(payload).encode('utf-8')
+        logger.info(f"📤 Payload size: {len(data)} bytes")
         req = urllib.request.Request(OLLAMA_URL, data=data, headers={'Content-Type': 'application/json'})
         
         # Timeout largo para modelos de 12GB
@@ -161,8 +178,9 @@ async def health():
 @app.post("/generate")
 async def generate(request: ImageRequest):
     # Auto-limitador industrial
-    request.width = min(request.width, 720)
-    request.height = min(request.height, 720)
+    # Auto-limitador industrial (Cap 920px)
+    if request.width: request.width = min(request.width, 920)
+    if request.height: request.height = min(request.height, 920)
     
     task_id = str(uuid.uuid4())[:8]
     fut = asyncio.get_running_loop().create_future()
