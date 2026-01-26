@@ -7,3 +7,5 @@ scripts/mcp_emulator.py
 **/__pycache__/
 *.pyc
 .DS_Store
+*.zip
+*.log
