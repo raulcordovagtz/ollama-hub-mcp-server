@@ -1,0 +1,55 @@
+{
+    "global_settings": {
+        "idle_timeout_seconds": 1200
+    },
+    "kokoro": {
+        "model_id": "mlx-community/Kokoro-82M-6bit",
+        "default_voice": "af_heart",
+        "parameters": {
+            "speed": 1.2,
+            "temperature": 0.7
+        },
+        "language_mapping": {
+            "en": {
+                "lang_code": "a",
+                "voice": "af_heart"
+            },
+            "es": {
+                "lang_code": "e",
+                "voice": "ef_dora"
+            },
+            "fr": {
+                "lang_code": "f",
+                "voice": "ff_siwis"
+            },
+            "hi": {
+                "lang_code": "h",
+                "voice": "hf_alpha"
+            },
+            "it": {
+                "lang_code": "i",
+                "voice": "if_sara"
+            },
+            "it-female": {
+                "lang_code": "i",
+                "voice": "if_sara"
+            },
+            "it-male": {
+                "lang_code": "i",
+                "voice": "im_nicola"
+            },
+            "pt": {
+                "lang_code": "p",
+                "voice": "pf_dora"
+            },
+            "ja": {
+                "lang_code": "j",
+                "voice": "jf_alpha"
+            },
+            "zh": {
+                "lang_code": "z",
+                "voice": "zf_xiaoxiao"
+            }
+        }
+    }
+}
