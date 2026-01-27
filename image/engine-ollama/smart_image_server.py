@@ -10,6 +10,8 @@ from typing import Optional
 from concurrent.futures import ThreadPoolExecutor
 from pydantic import BaseModel
 from fastapi import FastAPI, HTTPException
+from PIL import Image
+import io
 
 # =======================
 # Logging & Configuration
@@ -17,6 +19,46 @@ from fastapi import FastAPI, HTTPException
 
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 logger = logging.getLogger("SMART_IMAGE")
+
+# =======================
+# Constantes de Diseño
+# =======================
+MAX_EDGE = 1024
+ALIGNMENT = 16
+
+def normalize_dimension(val: int) -> int:
+    """Ajusta al múltiplo de 16 más cercano."""
+    return round(val / ALIGNMENT) * ALIGNMENT
+
+def apply_geometric_firewall(width: int, height: int) -> tuple[int, int]:
+    """
+    Normaliza dimensiones:
+    1. Limita la arista mayor a MAX_EDGE manteniendo el ratio.
+    2. Ajusta ambas dimensiones al múltiplo de 16 más cercano.
+    """
+    if not width or not height:
+        return 720, 720 # Fallback seguro (múltiplo de 16: 16*45)
+
+    # 1. Escalar si supera el máximo (manteniendo ratio)
+    if width > MAX_EDGE or height > MAX_EDGE:
+        ratio = width / height
+        if width > height:
+            width = MAX_EDGE
+            height = int(MAX_EDGE / ratio)
+        else:
+            height = MAX_EDGE
+            width = int(MAX_EDGE * ratio)
+    
+    # 2. Alineación a múltiplos de 16
+    new_w = normalize_dimension(width)
+    new_h = normalize_dimension(height)
+    
+    # Asegurar que no queden en 0 por redondeo extremo
+    new_w = max(new_w, ALIGNMENT)
+    new_h = max(new_h, ALIGNMENT)
+    
+    logger.info(f"🛡️ Firewall Geométrico: {width}x{height} -> {new_w}x{new_h}")
+    return new_w, new_h
 
 OUTPUT_DIR = "/Users/crotalo/desarrollo-local/server/image/outputs"
 PROMPT_LOG = "/Users/crotalo/desarrollo-local/server/logs/image/prompts.log"
@@ -94,8 +136,28 @@ def perform_image_inference(request: ImageRequest, task_id: str):
             imgs.append(request.image_base64)
             
         if imgs:
-            payload["images"] = imgs
-            logger.info(f"📸 Attached {len(imgs)} images to payload for model {request.model}")
+            processed_imgs = []
+            apply_resize = len(imgs) > 1  # Estrategia industrial: 2+ imágenes activan autolimitador a 512px
+            
+            for i, b64 in enumerate(imgs):
+                if "," in b64: b64 = b64.split(",")[1]
+                img_data = base64.b64decode(b64)
+                img = Image.open(io.BytesIO(img_data))
+                
+                if apply_resize:
+                    # Redimensionar si el lado más grande supera los 512px
+                    if max(img.size) > 512:
+                        img.thumbnail((512, 512), Image.Resampling.LANCZOS)
+                        logger.info(f"📏 Resized image {i+1} to {img.size} for multi-reference stability.")
+                
+                # Convertir de nuevo a base64
+                buffered = io.BytesIO()
+                # Usar formato de la imagen original o PNG por defecto
+                img.save(buffered, format="PNG")
+                processed_imgs.append(base64.b64encode(buffered.getvalue()).decode('utf-8'))
+
+            payload["images"] = processed_imgs
+            logger.info(f"📸 Attached {len(processed_imgs)} images to payload for model {request.model} (Resize: {apply_resize})")
 
         data = json.dumps(payload).encode('utf-8')
         logger.info(f"📤 Payload size: {len(data)} bytes")
@@ -177,10 +239,11 @@ async def health():
 
 @app.post("/generate")
 async def generate(request: ImageRequest):
-    # Auto-limitador industrial
-    # Auto-limitador industrial (Cap 920px)
-    if request.width: request.width = min(request.width, 920)
-    if request.height: request.height = min(request.height, 920)
+    # Cortafuegos geométrico especializado (z-image-turbo)
+    if "z-image" in request.model.lower():
+        w = request.width or 720
+        h = request.height or 720
+        request.width, request.height = apply_geometric_firewall(w, h)
     
     task_id = str(uuid.uuid4())[:8]
     fut = asyncio.get_running_loop().create_future()
