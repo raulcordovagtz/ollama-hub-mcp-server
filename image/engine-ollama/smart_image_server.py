@@ -6,10 +6,14 @@ import asyncio
 import uuid
 import base64
 import urllib.request
+import urllib.error
+import signal
+import sys
 from typing import Optional
 from concurrent.futures import ThreadPoolExecutor
 from pydantic import BaseModel
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, Request
+from contextlib import asynccontextmanager
 from PIL import Image
 import io
 
@@ -37,9 +41,8 @@ def apply_geometric_firewall(width: int, height: int) -> tuple[int, int]:
     2. Ajusta ambas dimensiones al múltiplo de 16 más cercano.
     """
     if not width or not height:
-        return 720, 720 # Fallback seguro (múltiplo de 16: 16*45)
+        return 720, 720 
 
-    # 1. Escalar si supera el máximo (manteniendo ratio)
     if width > MAX_EDGE or height > MAX_EDGE:
         ratio = width / height
         if width > height:
@@ -49,11 +52,9 @@ def apply_geometric_firewall(width: int, height: int) -> tuple[int, int]:
             height = MAX_EDGE
             width = int(MAX_EDGE * ratio)
     
-    # 2. Alineación a múltiplos de 16
     new_w = normalize_dimension(width)
     new_h = normalize_dimension(height)
     
-    # Asegurar que no queden en 0 por redondeo extremo
     new_w = max(new_w, ALIGNMENT)
     new_h = max(new_h, ALIGNMENT)
     
@@ -65,6 +66,7 @@ PROMPT_LOG = "/Users/crotalo/desarrollo-local/server/logs/image/prompts.log"
 OLLAMA_URL = "http://localhost:11434/api/generate"
 
 os.makedirs(OUTPUT_DIR, exist_ok=True)
+os.makedirs(os.path.dirname(PROMPT_LOG), exist_ok=True)
 
 class ImageRequest(BaseModel):
     prompt: str
@@ -81,7 +83,7 @@ class ImageRequest(BaseModel):
 # Prompt & Cost Logger
 # =======================
 
-def log_inference(task_id: str, request: ImageRequest, status: str, duration: float = 0):
+def log_inference(task_id: str, request: ImageRequest, status: str, duration: float = 0, error_msg: str = ""):
     log_entry = {
         "timestamp": time.strftime("%Y-%m-%d %H:%M:%S"),
         "task_id": task_id,
@@ -90,10 +92,14 @@ def log_inference(task_id: str, request: ImageRequest, status: str, duration: fl
         "size": f"{request.width}x{request.height}",
         "steps": request.steps,
         "status": status,
-        "duration": round(duration, 2)
+        "duration": round(duration, 2),
+        "error": error_msg
     }
-    with open(PROMPT_LOG, "a") as f:
-        f.write(json.dumps(log_entry) + "\n")
+    try:
+        with open(PROMPT_LOG, "a") as f:
+            f.write(json.dumps(log_entry) + "\n")
+    except Exception as e:
+        logger.error(f"Failed to write to prompt log: {e}")
 
 # =======================
 # Inference Engine (Raw API)
@@ -104,12 +110,10 @@ def perform_image_inference(request: ImageRequest, task_id: str):
     logger.info(f"🎨 [RAW API] Task: {task_id} | {request.model} | {request.width}x{request.height}")
     
     try:
-        # Preparamos el payload crudo para evitar que la libreria ollama-python filtre campos
         payload = {
             "model": request.model,
             "prompt": request.prompt,
             "stream": False,
-            # Probamos inyectar parametros en raiz Y en options para maxima compatibilidad
             "width": request.width,
             "height": request.height,
             "steps": request.steps,
@@ -119,7 +123,6 @@ def perform_image_inference(request: ImageRequest, task_id: str):
             }
         }
         
-        # Inyectar dimensiones solo si se especifican
         if request.width:
             payload["width"] = request.width
             payload["options"]["width"] = request.width
@@ -130,44 +133,42 @@ def perform_image_inference(request: ImageRequest, task_id: str):
         if request.negative_prompt:
             payload["prompt"] = f"{request.prompt} [negative: {request.negative_prompt}]"
 
-        # Manejo de múltiples imágenes o imagen individual (retrocompatibilidad)
         imgs = request.images_base64 or []
         if request.image_base64:
             imgs.append(request.image_base64)
             
         if imgs:
             processed_imgs = []
-            apply_resize = len(imgs) > 1  # Estrategia industrial: 2+ imágenes activan autolimitador a 512px
-            
+            # Redimensionar si hay múltiples imágenes O si una sola es demasiado grande (>1024)
             for i, b64 in enumerate(imgs):
                 if "," in b64: b64 = b64.split(",")[1]
                 img_data = base64.b64decode(b64)
                 img = Image.open(io.BytesIO(img_data))
                 
-                if apply_resize:
-                    # Redimensionar si el lado más grande supera los 512px
-                    if max(img.size) > 512:
-                        img.thumbnail((512, 512), Image.Resampling.LANCZOS)
-                        logger.info(f"📏 Resized image {i+1} to {img.size} for multi-reference stability.")
+                # Estrategia: 2+ imágenes -> 512px max. 1 imagen -> 1024px max.
+                limit = 512 if len(imgs) > 1 else 1024
+                if max(img.size) > limit:
+                    img.thumbnail((limit, limit), Image.Resampling.LANCZOS)
+                    logger.info(f"📏 Resized input image {i+1} to {img.size} (Limit: {limit}px)")
                 
-                # Convertir de nuevo a base64
                 buffered = io.BytesIO()
-                # Usar formato de la imagen original o PNG por defecto
                 img.save(buffered, format="PNG")
                 processed_imgs.append(base64.b64encode(buffered.getvalue()).decode('utf-8'))
 
             payload["images"] = processed_imgs
-            logger.info(f"📸 Attached {len(processed_imgs)} images to payload for model {request.model} (Resize: {apply_resize})")
+            logger.info(f"📸 Attached {len(processed_imgs)} images to payload.")
+
+        # Añadir keep_alive para mantener el modelo cargado (suprimir arranque en frío)
+        # pero permitir que Ollama lo libere si pasan 5 minutos de inactividad.
+        payload["keep_alive"] = "5m"
 
         data = json.dumps(payload).encode('utf-8')
-        logger.info(f"📤 Payload size: {len(data)} bytes")
         req = urllib.request.Request(OLLAMA_URL, data=data, headers={'Content-Type': 'application/json'})
         
-        # Timeout largo para modelos de 12GB
-        with urllib.request.urlopen(req, timeout=600) as response:
+        # Timeout largo pero controlado
+        with urllib.request.urlopen(req, timeout=300) as response:
             resp_body = json.loads(response.read().decode('utf-8'))
             
-            # Buscamos la imagen en 'image' (singular) o 'images' (lista)
             img_b64 = resp_body.get('image')
             if not img_b64 and resp_body.get('images'):
                 img_b64 = resp_body['images'][0]
@@ -176,29 +177,31 @@ def perform_image_inference(request: ImageRequest, task_id: str):
             file_path = os.path.join(OUTPUT_DIR, file_name)
             
             if img_b64:
-                # Limpiar prefijo si existe
                 if "," in img_b64: img_b64 = img_b64.split(",")[1]
                 with open(file_path, "wb") as f:
                     f.write(base64.b64decode(img_b64))
                 status = "SUCCESS"
             else:
-                with open(file_path, "w") as f:
-                    f.write(f"NO_IMAGE_DATA\nKEYS: {list(resp_body.keys())}\nRAW: {str(resp_body)[:1000]}")
+                logger.error(f"❌ No image data in Ollama response. Keys: {list(resp_body.keys())}")
                 status = "ERROR_NO_IMAGE"
 
         dt = time.perf_counter() - start_t
         log_inference(task_id, request, status, dt)
-        logger.info(f"✅ Finished [{task_id}] in {round(dt, 2)}s | Status: {status}")
-
         return {
             "status": "success" if status == "SUCCESS" else "error",
             "task_id": task_id,
-            "file_path": file_path,
+            "file_path": file_path if status == "SUCCESS" else None,
             "meta": {"duration": dt}
         }
 
+    except urllib.error.HTTPError as e:
+        error_body = e.read().decode('utf-8') if e.fp else "No body"
+        logger.error(f"💥 Ollama HTTP Error {e.code} [{task_id}]: {error_body}")
+        log_inference(task_id, request, "HTTP_ERROR", time.perf_counter() - start_t, f"{e.code}: {error_body}")
+        return {"status": "error", "message": f"Ollama error {e.code}: {error_body}"}
     except Exception as e:
         logger.error(f"💥 Fatal error [{task_id}]: {e}")
+        log_inference(task_id, request, "FATAL_ERROR", time.perf_counter() - start_t, str(e))
         return {"status": "error", "message": str(e)}
 
 # =======================
@@ -207,39 +210,77 @@ def perform_image_inference(request: ImageRequest, task_id: str):
 
 class ImageQueueManager:
     def __init__(self):
-        self.queue = asyncio.Queue(maxsize=10)
-        self.executor = ThreadPoolExecutor(max_workers=1)
+        self.queue = asyncio.Queue(maxsize=15)
+        self.executor = ThreadPoolExecutor(max_workers=1, thread_name_prefix="InferenceWorker")
         self.is_processing = False
+        self.current_task_id = None
+        self._loop_task = None
 
     async def worker(self):
+        logger.info("👷 Worker started.")
         while True:
             item = await self.queue.get()
-            self.is_processing = True
             req, task_id, fut = item
+            
+            # Verificar si el cliente ya se desconectó
+            if fut.cancelled():
+                logger.info(f"⏭️ Task {task_id} cancelled before processing.")
+                self.queue.task_done()
+                continue
+
+            self.is_processing = True
+            self.current_task_id = task_id
+            
             try:
-                res = await asyncio.get_running_loop().run_in_executor(self.executor, perform_image_inference, req, task_id)
-                fut.set_result(res)
+                # Ejecutar inferencia en el executor
+                res = await asyncio.get_running_loop().run_in_executor(
+                    self.executor, perform_image_inference, req, task_id
+                )
+                if not fut.cancelled():
+                    fut.set_result(res)
+                else:
+                    logger.info(f"🚮 Task {task_id} finished but client already disconnected.")
             except Exception as e:
-                fut.set_exception(e)
+                if not fut.cancelled():
+                    fut.set_exception(e)
             finally:
                 self.queue.task_done()
                 self.is_processing = False
+                self.current_task_id = None
 
-app = FastAPI()
+    def start(self):
+        self._loop_task = asyncio.create_task(self.worker())
+
+    def stop(self):
+        if self._loop_task:
+            self._loop_task.cancel()
+        self.executor.shutdown(wait=False)
+
 queue_mgr = ImageQueueManager()
 
-@app.on_event("startup")
-async def start_worker():
-    asyncio.create_task(queue_mgr.worker())
-    logger.info("🚀 Smart Image Server v6.7 (RAW API Mode) Ready.")
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    # Startup
+    queue_mgr.start()
+    logger.info("🚀 Smart Image Server v7.0 (Robust Mode) Ready.")
+    yield
+    # Shutdown
+    logger.info("🛑 Shutting down server...")
+    queue_mgr.stop()
+
+app = FastAPI(lifespan=lifespan)
 
 @app.get("/health")
 async def health():
-    return {"status": "ok", "is_processing": queue_mgr.is_processing, "queue_size": queue_mgr.queue.qsize()}
+    return {
+        "status": "ok", 
+        "is_processing": queue_mgr.is_processing, 
+        "current_task": queue_mgr.current_task_id,
+        "queue_size": queue_mgr.queue.qsize()
+    }
 
 @app.post("/generate")
 async def generate(request: ImageRequest):
-    # Cortafuegos geométrico especializado (z-image-turbo)
     if "z-image" in request.model.lower():
         w = request.width or 720
         h = request.height or 720
@@ -247,9 +288,38 @@ async def generate(request: ImageRequest):
     
     task_id = str(uuid.uuid4())[:8]
     fut = asyncio.get_running_loop().create_future()
-    await queue_mgr.queue.put((request, task_id, fut))
-    return await fut
+    
+    try:
+        await asyncio.wait_for(queue_mgr.queue.put((request, task_id, fut)), timeout=5.0)
+    except asyncio.TimeoutError:
+        raise HTTPException(status_code=503, detail="Server busy, queue is full.")
+
+    try:
+        return await fut
+    except asyncio.CancelledError:
+        logger.info(f"⚠️ Request {task_id} cancelled by client.")
+        raise
 
 if __name__ == "__main__":
     import uvicorn
-    uvicorn.run(app, host="127.0.0.1", port=8010, log_level="error")
+    # Usar uvicorn con loop 'asyncio' y manejo de señales
+    config = uvicorn.Config(
+        app, 
+        host="127.0.0.1", 
+        port=8010, 
+        log_level="info",
+        timeout_keep_alive=30,
+        limit_concurrency=20
+    )
+    server = uvicorn.Server(config)
+    
+    # Manejo explícito de señales para evitar procesos zombies
+    def handle_exit(sig, frame):
+        logger.info(f"Received signal {sig}, exiting...")
+        queue_mgr.stop()
+        sys.exit(0)
+    
+    signal.signal(signal.SIGINT, handle_exit)
+    signal.signal(signal.SIGTERM, handle_exit)
+    
+    server.run()
