@@ -9,6 +9,7 @@ echo "🔴 DETENIENDO TODOS LOS SERVICIOS DE IA..."
 echo "🧹 Terminando servidores locales (FastAPI)..."
 pkill -9 -f "smart_server.py"
 pkill -9 -f "smart_image_server.py"
+pkill -9 -f "smart_diffusion_server.py"
 
 # 2. Instruccion Radical a Ollama: Vaciar VRAM
 # Esto le dice a Ollama que reduzca el keep_alive de todos los modelos a 0 para que se descarguen ya.
@@ -22,8 +23,8 @@ for model in $models; do
 done
 
 # 3. Limpiar puertos (si algo se quedo colgado)
-echo "🔌 Liberando puertos (8007-8010)..."
-for port in {8007..8010}; do
+echo "🔌 Liberando puertos (8007-8011)..."
+for port in {8007..8011}; do
     pid=$(lsof -ti :$port)
     if [ ! -z "$pid" ]; then
         kill -9 $pid

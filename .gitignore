@@ -9,3 +9,35 @@ scripts/mcp_emulator.py
 .DS_Store
 *.zip
 *.log
+# Ambientes y Dependencias
+node_modules/
+.venv/
+venv/
+env/
+.env
+
+# Archivos de Audio Residuales
+*.wav
+*.mp3
+*.m4a
+*.ogg
+
+# Modelos Pesados (Evitar subir a GitHub)
+*.safetensors
+*.bin
+*.pt
+
+# Archivos de Imagen
+*.jpg
+*.jpeg
+*.png
+*.PNG
+*.gif
+*.webp
+
+# Documentos pesados
+*.pdf
+
+# Archivos generados
+*.log
+.DS_Store

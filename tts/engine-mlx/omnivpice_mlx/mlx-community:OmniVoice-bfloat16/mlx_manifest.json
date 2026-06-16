@@ -1,0 +1,16 @@
+{
+  "audio_tokenizer_dir": "audio_tokenizer",
+  "audio_tokenizer_repo": "eustlb/higgs-audio-v2-tokenizer",
+  "config_file": "config.json",
+  "format": "mlx-compatible-safetensors",
+  "index_file": "model.safetensors.index.json",
+  "model": "OmniVoice",
+  "precision": "bfloat16",
+  "quantization": null,
+  "source_model_dir": "/Volumes/usb_main/home/index_mlx/models/OmniVoice-official",
+  "source_repo": "k2-fsa/OmniVoice",
+  "target_repo": "mlx-community/OmniVoice-bfloat16",
+  "tensor_count": 313,
+  "variant": "bfloat16",
+  "weight_pattern": "model.safetensors"
+}

@@ -1,0 +1,11 @@
+[project]
+name = "music-mcp-hub"
+version = "1.0.0"
+description = "MCP Hub for controlling Apple Music on macOS — usable by any LLM client"
+requires-python = ">=3.10"
+dependencies = [
+    "fastmcp>=2.0,<3",
+]
+
+[project.scripts]
+music-mcp = "server:main"

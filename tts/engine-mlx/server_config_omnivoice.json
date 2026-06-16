@@ -1,0 +1,64 @@
+{
+    "global_settings": {
+        "idle_timeout_seconds": 1200,
+        "speed": 1
+    },
+    "omnivoice": {
+        "model_path": "/Users/crotalo/desarrollo-local/server/tts/engine-mlx/omnivpice_mlx/mlx-community:OmniVoice-bfloat16",
+        "default_language": "en",
+        "supported_languages": [
+            "en",
+            "es",
+            "fr",
+            "it",
+            "de",
+            "pt",
+            "ja",
+            "zh",
+            "ko",
+            "ar",
+            "hi",
+            "ru"
+        ],
+        "language_mapping": {
+            "en": {
+                "language": "en",
+                "label": "English",
+                "ref_audio": "assets/ref_audio/ref_en.wav"
+            },
+            "es": {
+                "language": "es",
+                "label": "Español",
+                "ref_audio": "/Users/crotalo/desarrollo-local/server/tts/engine-mlx/assets/ref_audio/cristina.wav"
+            },
+            "it": {
+                "language": "it",
+                "label": "Italiano",
+                "ref_audio": "assets/ref_audio/ref_it.wav"
+            },
+            "fr": {
+                "language": "fr",
+                "label": "Français",
+                "ref_audio": "assets/ref_audio/ref_fr.wav"
+            }
+        },
+        "voice_presets": {
+            "Sally": {
+                "ref_audio": "/Users/crotalo/desarrollo-local/server/tts/engine-mlx/assets/ref_audio/ref_en.wav",
+                "language": "en"
+            },
+            "Gobernador": {
+                "ref_audio": "/Users/crotalo/desarrollo-local/server/tts/engine-mlx/assets/ref_audio/cristina.wav",
+                "language": "es"
+            },
+            "Myriam": {
+                "ref_audio": "/Users/crotalo/desarrollo-local/server/tts/engine-mlx/assets/ref_audio/fr.wav",
+                "language": "fr"
+            },
+            "Sara": {
+                "ref_audio": "assets/ref_audio/ref_it.wav",
+                "language": "it"
+            }
+        }
+    }
+}

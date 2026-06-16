@@ -1,0 +1,10 @@
+{
+    "mcpServers": {
+        "music": {
+            "command": "python3",
+            "args": [
+                "/Users/crotalo/desarrollo-local/server/musica/server.py"
+            ]
+        }
+    }
+}

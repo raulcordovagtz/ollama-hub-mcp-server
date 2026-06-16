@@ -82,7 +82,8 @@ class AudioHandler:
                 with wave.open(path, 'wb') as wf:
                     wf.setnchannels(1); wf.setsampwidth(2); wf.setframerate(sample_rate)
                     wf.writeframes(data.tobytes())
-                self.current_process = subprocess.Popen(["afplay", path], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+                speed = str(GLOBAL_CONFIG.get("global_settings", {}).get("speed", 1.0))
+                self.current_process = subprocess.Popen(["afplay", "-r", speed, path], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
             except Exception as e: logger.error(f"Audio Error: {e}")
 
 # =======================

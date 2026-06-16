@@ -1,0 +1,40 @@
+[project]
+name = "kimi-2-seg"
+version = "0.1.0"
+description = "Testing Kimi-VL Chat & Vision"
+dependencies = [
+    "torch",
+    "transformers==4.48.2",
+    "pillow",
+    "tiktoken",
+    "accelerate",
+    "einops",
+    "timm",
+    "pycocotools",
+    "fastapi>=0.110.0",
+    "uvicorn>=0.27.0",
+    "pyyaml>=6.0",
+    "svgwrite>=1.4.3",
+    "python-multipart>=0.0.9",
+    "requests>=2.32.0"
+]
+
+[tool.pyright]
+venvPath = "."
+venv = ".venv"
+include = ["."]
+exclude = [
+    ".venv",
+    "**/__pycache__",
+    "**/node_modules",
+    "client",
+    "Docs/Imput",
+    "Docs/2505.14059v1.pdf"
+]
+ignore = [
+    ".venv",
+    "client",
+    "Docs/Imput",
+    "Docs/2505.14059v1.pdf"
+]
+typeCheckingMode = "basic"

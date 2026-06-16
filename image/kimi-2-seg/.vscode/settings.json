@@ -1,0 +1,32 @@
+{
+    "python.defaultInterpreterPath": "./.venv/bin/python3",
+    "python.analysis.useLibraryCodeForTypes": false,
+    "python.analysis.exclude": [
+        "**/.venv",
+        "**/__pycache__",
+        "**/node_modules",
+        "client"
+    ],
+    "python.analysis.ignore": [
+        "**/.venv",
+        "**/__pycache__",
+        "**/node_modules",
+        "client"
+    ],
+    "files.exclude": {
+        "**/.venv": false,
+        "**/__pycache__": true,
+        "**/node_modules": true,
+        "client": false
+    },
+    "search.exclude": {
+        "**/.venv": true,
+        "**/__pycache__": true
+    },
+    "files.watcherExclude": {
+        "**/.venv/**": true,
+        "**/__pycache__/**": true,
+        "**/node_modules/**": true,
+        "client/**": true
+    }
+}
