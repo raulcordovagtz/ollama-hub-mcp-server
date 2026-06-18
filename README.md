@@ -12,6 +12,9 @@ server/
 ├── diffusion/        # Generación por Difusión Discreta: DiffusionGemma - Puerto 8011
 ├── gemini-proxy/     # Proxy Traductor de APIs: Claude Code -> Gemini API - Puerto 1235
 ├── mcp-chuk/         # Smart Client STDIO -> HTTP para Lazarus MCP - Puerto 8010
+├── skills/           # Skills Hub: Directorio central de skills MCP (symlinks + skills propios)
+├── Skills_Hub/       # Reservado: Fork local de local-skills-mcp (uso futuro)
+├── sync-skills.sh    # Sincronizador de symlinks desde plugins de Antigravity IDE → skills/
 ├── scripts/          # Motor de Control y Arranque
 └── logs/             # Auditoría y Accounting centralizado
 ```
@@ -38,7 +41,18 @@ El sistema expone 4 herramientas mediante el bridge `ollama-hub` (v1.0.5):
 Puente Node.js que expone el puerto `1235` para traducir las llamadas nativas de Anthropic hacia Google Gemini API.
 * **Inteligencia:** Inicia automáticamente al invocar los alias (`claud-gemini`, `claud-3flash`) y se apaga al cerrar la sesión de código para no gastar recursos.
 
-### 3. Lazarus Interpretability Server (vía mcp-chuk)
+### 3. Skills Hub (vía `local-skills-mcp`)
+
+Servidor MCP universal (`local-skills-mcp` v1.x — npm global) que expone todos los skills del directorio `/skills/` a cualquier agente MCP compatible.
+* **Protocolo:** STDIO puro (sin puerto ni proceso residente).
+* **Cold Start Nativo:** No requiere proxy ni arranque manual. El cliente MCP lanza el proceso al invocar la primera herramienta y lo destruye al desconectar.
+* **Single Source of Truth:** `SKILLS_DIR=/Users/crotalo/desarrollo-local/server/skills` es la raíz unificada. Los skills de Antigravity IDE se enlazan via symlinks con `sync-skills.sh`.
+* **Herramienta expuesta:** `get_skill` — carga el contenido de cualquier skill bajo demanda (~50 tokens por nombre/descripción en idle).
+* **Clientes activos:** LM Studio (`~/.lmstudio/mcp.json`) — Hermes harness y agentes locales (futuros).
+
+---
+
+### 4. Lazarus Interpretability Server (vía mcp-chuk)
 
 Proxy inteligente (`lazarus_smart_client.py`) que actúa como puente bidireccional entre el protocolo STDIO estándar de MCP (Machine Context Protocol) y el servidor HTTP de Lazarus (`chuk-mcp-lazarus`) corriendo en el puerto `8010`.
 * **Entorno Objetivo:** Apunta a la instalación aislada del entorno conda en `/opt/miniconda3/envs/MarketGraph-AI/`.

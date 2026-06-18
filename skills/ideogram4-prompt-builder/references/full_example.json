@@ -1,0 +1,45 @@
+{
+  "high_level_description": "A graffiti-style urban mural on a textured concrete wall depicting a fox-girl character in a dynamic pose, surrounded by stylized spray-paint tag lettering and bold geometric shapes.",
+  "style_description": {
+    "aesthetics": "gritty urban street art, high-contrast, expressive line work, vibrant color pops against dark background",
+    "lighting": "flat ambient light with slight warm directional fill from upper left, enhancing texture depth",
+    "medium": "graphic_design",
+    "art_style": "graffiti mural, anime-influenced character design, bold outlines, urban spray-paint aesthetic",
+    "color_palette": ["#1B1B2F", "#E94560", "#F5A623", "#00D4FF", "#7CFF6B", "#FFFFFF"]
+  },
+  "compositional_deconstruction": {
+    "background": "Rough weathered concrete wall with subtle horizontal staining and surface imperfections. Deep dark navy (#1B1B2F) as the primary fill, with faded overlapping circular spray bursts in muted tones creating depth. Light grunge texture throughout.",
+    "elements": [
+      {
+        "type": "obj",
+        "bbox": [120, 200, 820, 650],
+        "desc": "Fox-girl character in dynamic 3/4 pose facing left: fox ears with orange gradient tips, long silver hair, wearing a cropped hoodie with spray-can motif, baggy jogger pants, high-top sneakers. Right hand raised holding a spray can mid-action. Expressive wide eyes with teal irises. Anime-style proportions with graffiti-thick black outlines.",
+        "color_palette": ["#F5A623", "#FFFFFF", "#E94560", "#1B1B2F"]
+      },
+      {
+        "type": "text",
+        "bbox": [30, 30, 180, 200],
+        "text": "FOXZONE",
+        "desc": "Large wildstyle graffiti tag in top-left corner. Letters interlocked with arrows, drips, and a star accent. Primary fill electric cyan with hot-pink outline and white highlight strokes.",
+        "color_palette": ["#00D4FF", "#E94560", "#FFFFFF"]
+      },
+      {
+        "type": "text",
+        "bbox": [750, 600, 950, 780],
+        "text": "EST. 2025",
+        "desc": "Small stencil-style text in lower right. Clean blocky sans-serif caps. Off-white fill on dark background, subtle spray fade around edges.",
+        "color_palette": ["#FFFFFF", "#1B1B2F"]
+      },
+      {
+        "type": "obj",
+        "bbox": [820, 100, 980, 500],
+        "desc": "Vertical stack of overlapping geometric shapes: diamond, triangle, circle. Each filled with one accent color from the palette and outlined in thick black. Functions as a decorative sidebar element balancing the composition."
+      },
+      {
+        "type": "obj",
+        "bbox": [0, 700, 150, 1000],
+        "desc": "Stylized spray-paint drips running vertically in the lower-left corner. Colors: electric cyan and lime green alternating. Semi-transparent, blending into the concrete texture."
+      }
+    ]
+  }
+}
