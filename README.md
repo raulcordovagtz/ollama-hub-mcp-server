@@ -41,6 +41,16 @@ LM Studio ejecuta código aislando las carpetas de trabajo por sesión para prot
 * **`js-code-sandbox`**: Ejecución en JavaScript/TypeScript usando `deno`. Modificado para permitir red (`--allow-net`).
 * **`python-code-sandbox`**: Clon nativo para Python. Utiliza un entorno virtual compartido (`~/.lmstudio/python-sandbox-venv`) y soporta inyección de variables desde `sandbox.env`. Permite al modelo instalar librerías persistentes vía `pip`.
 
+#### Universal Code Hub MCP (`code-hub`)
+Servidor universal que reemplaza a los sandboxes nativos, disponible para TODOS los clientes (LM Studio, Hermes, Claude Desktop).
+* **Protocolo:** STDIO puro (Cold Start Nativo).
+* **Sesión Híbrida Efímera:** Al abrirse el chat, crea una carpeta temporal (`/tmp/code-hub-session-XYZ/`) compartida por todos los lenguajes, permitiendo workflows multi-lenguaje. Se borra automáticamente al cerrar el chat.
+* **Herramientas Expuestas:**
+  * `execute_python`: Usa el `.venv` compartido y el `sandbox.env`.
+  * `execute_js`: Usa Node.js.
+  * `execute_applescript`: Control total de la Mac vía osascript.
+  * `execute_bash`: Full Power de terminal.
+
 ### 2. Claude Code CLI (vía gemini-proxy)
 
 Puente Node.js que expone el puerto `1235` para traducir las llamadas nativas de Anthropic hacia Google Gemini API.
