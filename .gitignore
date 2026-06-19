@@ -15,6 +15,7 @@ node_modules/
 venv/
 env/
 .env
+*.env
 
 # Archivos de Audio Residuales
 *.wav
