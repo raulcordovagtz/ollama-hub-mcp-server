@@ -1,0 +1,28 @@
+# Dependencias para nvidia/LocateAnything-3B en Apple Silicon MPS
+# Instalar con: pip install -r requirements.txt
+#
+# IMPORTANTE: PyTorch debe instalarse ANTES de este archivo.
+# Ver install_deps.sh para el proceso correcto.
+
+# Modelo de lenguaje visual
+transformers==4.57.1
+peft
+
+# Imagen
+Pillow
+numpy
+opencv-python-headless
+
+# Servidor HTTP
+fastapi
+uvicorn[standard]
+
+# Traducción automática de prompts
+deep-translator
+
+# HuggingFace Hub (descarga del modelo)
+huggingface_hub
+
+# Nota: torch y torchvision se instalan por separado para macOS MPS.
+# Ver: https://pytorch.org/get-started/locally/
+# Comando: pip install torch torchvision

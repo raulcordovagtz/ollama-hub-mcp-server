@@ -10,6 +10,7 @@ server/
 ├── image/            # Creación Visual: Z-Image / Flux2 - Puerto 8012
 ├── text/             # Pensamiento/Visión: Qwen3 / Granite - Puerto 8009
 ├── diffusion/        # Generación por Difusión Discreta: DiffusionGemma - Puerto 8011
+├── vision/           # Detección y Grounding: LocateAnything - Puerto 8014
 ├── gemini-proxy/     # Proxy Traductor de APIs: Claude Code -> Gemini API - Puerto 1235
 ├── mcp-chuk/         # Smart Client STDIO -> HTTP para Lazarus MCP - Puerto 8010
 ├── skills/           # Skills Hub: Directorio central de skills MCP (symlinks + skills propios)
@@ -23,7 +24,7 @@ server/
 
 * **`emergency_stop.sh` (Botón Rojo):** Detención inmediata de procesos y vaciado de VRAM en Ollama.
 * **`monitor_resources.sh`:** Vigilancia de presión térmica y memoria activa con alertas acústicas.
-* **`start_image_server.sh` / `start_text_server.sh` / `start_diffusion_server.sh`:** Scripts de levantamiento en frío (Cold Start) usados por el bridge MCP.
+* **`start_image_server.sh` / `start_text_server.sh` / `start_diffusion_server.sh` / `start_locate_server.sh`:** Scripts de levantamiento en frío (Cold Start) usados por el bridge MCP.
 
 ## 🔌 Integración con Clientes
 
