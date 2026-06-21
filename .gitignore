@@ -1,4 +1,5 @@
 logs/
+models/
 image/outputs/*
 !image/outputs/.gitkeep
 scripts/test_*
@@ -42,3 +43,4 @@ env/
 # Archivos generados
 *.log
 .DS_Store
+
