@@ -1,0 +1,19 @@
+{
+    "en": {
+        "default": "/Users/crotalo/desarrollo-local/server/tts/pocket-tts-server/assets/audio_samples/luna_supertonic3.wav",
+        "alloy": "/Users/crotalo/desarrollo-local/server/tts/pocket-tts-server/assets/audio_samples/luna_supertonic3.wav",
+        "custom": "/Users/crotalo/desarrollo-local/server/tts/pocket-tts-server/assets/audio_samples/kate.wav"
+    },
+    "es": {
+        "default": "/Users/crotalo/desarrollo-local/server/tts/engine-mlx/assets/ref_audio/kate.wav",
+        "custom": "/Users/crotalo/desarrollo-local/server/tts/engine-mlx/assets/ref_audio/kate.wav"
+    },
+    "fr": {
+        "default": "/Users/crotalo/desarrollo-local/server/tts/engine-mlx/assets/ref_audio/voice_preview_amélie - young, confident and friendly.mp3",
+        "custom": "/Users/crotalo/desarrollo-local/server/tts/engine-mlx/assets/ref_audio/voice_preview_amélie - young, confident and friendly.mp3"
+    },
+    "it": {
+        "default": "/Users/crotalo/desarrollo-local/server/tts/engine-mlx/assets/ref_audio/cristina.wav",
+        "custom": "/Users/crotalo/desarrollo-local/server/tts/engine-mlx/assets/ref_audio/cristina.wav"
+    }
+}

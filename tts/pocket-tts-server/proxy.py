@@ -3,14 +3,12 @@ import http.server
 import socketserver
 import urllib.request
 import urllib.error
-import json
 import subprocess
 import time
-import sys
 
 PORT = 8008
 REAL_PORT = 8013
-START_SCRIPT = "/Users/crotalo/desarrollo-local/server/tts/supertonic-tts/start_supertonic.sh"
+START_SCRIPT = "/Users/crotalo/desarrollo-local/server/tts/pocket-tts-server/start_pocket_tts.sh"
 
 class ProxyHTTPRequestHandler(http.server.BaseHTTPRequestHandler):
     def log_message(self, format, *args):
@@ -24,7 +22,7 @@ class ProxyHTTPRequestHandler(http.server.BaseHTTPRequestHandler):
         except:
             pass
         
-        print(f"[{time.strftime('%H:%M:%S')}] Despertando servidor Supertonic interno en puerto {REAL_PORT}...", flush=True)
+        print(f"[{time.strftime('%H:%M:%S')}] Despertando servidor Pocket TTS interno en puerto {REAL_PORT}...", flush=True)
         # Alerta Sonora de Despertar
         subprocess.run(["afplay", "/System/Library/Sounds/Glass.aiff"], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
         subprocess.run([START_SCRIPT], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
@@ -50,8 +48,6 @@ class ProxyHTTPRequestHandler(http.server.BaseHTTPRequestHandler):
         url = f"http://127.0.0.1:{REAL_PORT}{self.path}"
         headers = dict(self.headers)
         
-        # urllib maneja Host automáticamente si no se incluye o si se incluye, 
-        # pero es mejor forzarlo al puerto real para evitar confictos
         if 'Host' in headers:
             headers['Host'] = f"127.0.0.1:{REAL_PORT}"
             
@@ -88,5 +84,5 @@ class ProxyHTTPRequestHandler(http.server.BaseHTTPRequestHandler):
         self.forward_request("POST")
 
 with socketserver.TCPServer(("", PORT), ProxyHTTPRequestHandler) as httpd:
-    print(f"[{time.strftime('%H:%M:%S')}] Proxy interceptor activo en puerto {PORT}. Consumo RAM: ~10MB.", flush=True)
+    print(f"[{time.strftime('%H:%M:%S')}] Proxy interceptor (Pocket TTS) activo en puerto {PORT}. Consumo RAM: ~10MB.", flush=True)
     httpd.serve_forever()
