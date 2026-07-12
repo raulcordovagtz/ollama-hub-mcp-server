@@ -13,7 +13,7 @@
             "state": {
               "type": "markdown",
               "state": {
-                "file": "ideogram4-prompt-builder/references/Skill.md",
+                "file": "Krea 2.0/Skill.md",
                 "mode": "source",
                 "source": false
               },
@@ -185,6 +185,8 @@
   },
   "active": "23d121e4ebbff901",
   "lastOpenFiles": [
-    "ideogram4-prompt-builder/references/Skill.md"
+    "ideogram4-prompt-builder/references/Skill.md",
+    "Krea 2.0/Skill.md",
+    "Krea 2.0"
   ]
 }
